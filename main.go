@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2015 Adam Hanna <ahanna@alumni.mines.edu>
- * Copyright (C) 2015 Jonathan Barronville <jonathan@belairlabs.com>
+ * Copyright (C) 2015-present Adam Hanna <ahanna@alumni.mines.edu>
+ * Copyright (C) 2015-present Jonathan Barronville <jonathan@belairlabs.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,82 +19,64 @@
 package main
 
 import (
-	"bufio"
+	"encoding/csv"
 	"fmt"
+	error_ "github.com/adam-hanna/PDQdb/error"
+	"github.com/codegangsta/cli"
+	"io"
+	"log"
 	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 )
 
-// define a struct for our data
-// can we define no 64 bit shiz? doing this will ensure we use the least amount of memory necessary
-// we're assuming the first col is the ID and won't be stored (bc it will be the key)
-type DataStruct struct {
-	foo2 uint8
-	foo3 int8
-	foo4 float32
-}
-
 func main() {
-	sFilePath, _ := filepath.Abs("20150315_randomData.txt")
-	m := make(map[string]DataStruct)
-
-	ToMem(sFilePath, m)
-
-	fmt.Println(m["QG50"])
-}
-
-// Open a file and scan line by line
-func ToMem(sFilePath string, m map[string]DataStruct) {
-	file, err := os.Open(sFilePath)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	defer file.Close()
-
-	// Note that scanner is limited to 4096 []byte buffer size per line!
-	// User bufio.ReaderLine() or ReadString() instead bc no line limit?
-	scanner := bufio.NewScanner(file)
-
-	// get some vars ready to scan the file
-	bHeaderRow := true
-
-	// start reading the file line-by-line
-	for scanner.Scan() {
-		// skip the first row; there must be a better way!
-		if bHeaderRow {
-			bHeaderRow = false
-		} else {
-			// write this line to the map
-			// assume the first col is the id; also assume this is a string
-			// assume the delimiter is a tab
-			// assume the number of columns is 4
-			slTemp := strings.FieldsFunc(scanner.Text(), tabSlicer)
-
-			//handle errors later
-			tempFoo2, _ := strconv.ParseUint(slTemp[1], 10, 8)
-			tempFoo3, _ := strconv.ParseInt(slTemp[2], 10, 8)
-			tempFoo4, _ := strconv.ParseFloat(slTemp[3], 32)
-
-			tempData := DataStruct{
-				uint8(tempFoo2),
-				int8(tempFoo3),
-				float32(tempFoo4),
+	app := cli.NewApp()
+	app.Action = func(ctx *cli.Context) {
+		csvFilePath := ctx.GlobalString("file-path")
+		if csvFilePath == "" {
+			log.Fatal(
+				error_.New("--file-path (or -f) required!"),
+			)
+		}
+		csvFileHandle, err := os.Open(csvFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer csvFileHandle.Close()
+		csvFileReader := csv.NewReader(csvFileHandle)
+		var csvFileLineCount uint = 1
+		for {
+			dataRecord, err := csvFileReader.Read()
+			if err == io.EOF {
+				break
 			}
-			m[slTemp[0]] = tempData
+			if err != nil {
+				log.Print(err)
+			}
+			fmt.Printf("Record %d is %v and has %d fields.\n", csvFileLineCount, dataRecord, len(dataRecord))
+			csvFileLineCount += 1
 		}
 	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Println(err)
+	app.Authors = []cli.Author{
+		{
+			Email: "ahanna@alumni.mines.edu",
+			Name:  "Adam Hanna",
+		},
+		{
+			Email: "jonathan@belairlabs.com",
+			Name:  "Jonathan Barronville",
+		},
 	}
-}
-
-// this function slices a string by a rune
-// the tab rune is hard coded, for now
-func tabSlicer(r rune) bool {
-	return r == '\t'
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:  "file-path,f",
+			Usage: "Path to the CSV file to load.",
+		},
+	}
+	app.Name = "PDQdb"
+	app.Usage = "A read-optimized, in-memory, data processing engine."
+	app.Version = "0.0.1"
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
