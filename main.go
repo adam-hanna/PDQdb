@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"github.com/adam-hanna/PDQdb/data"
 	error_ "github.com/adam-hanna/PDQdb/error"
+	"github.com/adam-hanna/PDQdb/server"
 	"github.com/codegangsta/cli"
 	"log"
 	"os"
@@ -63,6 +64,13 @@ func main() {
 		}
 		// fmt.Println(configJsonDescriptor)
 		data.LoadAndTransformCsvData(csvFileHandle, &configJsonDescriptor)
+		err = server.StartServer(
+			ctx.GlobalString("server-hostname"),
+			uint16(ctx.GlobalInt("server-port")),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	app.Authors = []cli.Author{
 		{
@@ -82,6 +90,16 @@ func main() {
 		cli.StringFlag{
 			Name:  "file-path,f",
 			Usage: "Path to the CSV file to load.",
+		},
+		cli.StringFlag{
+			Name:  "server-hostname,n",
+			Usage: "Server hostname.",
+			Value: "localhost",
+		},
+		cli.IntFlag{
+			Name:  "server-port,p",
+			Usage: "Server port.",
+			Value: 38216,
 		},
 	}
 	app.Name = "PDQdb"

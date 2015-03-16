@@ -33,7 +33,7 @@ func StartServer(hostname string, port uint16) error {
 	mx.HandleFunc("/key/{key}", processKey)
 	mx.HandleFunc("/", serveMainRoute)
 
-	var host string = hostname + strconv.Itoa(int(port))
+	var host string = hostname + ":" + strconv.Itoa(int(port))
 
 	return http.ListenAndServe(host, mx)
 
@@ -52,7 +52,7 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		// extract the key from the url of the request
 		vars := mux.Vars(req)
-		key := vars["name"]
+		key := vars["key"]
 
 		//grab the key that the user is looking for
 		var bsonData []byte = data.DataSet[key]
@@ -66,7 +66,7 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 
 		// write the headers
 		res.WriteHeader(http.StatusOK)
-		res.Header().Set("Content-Type", "text/plain")
+		res.Header().Set("Content-Type", "application/json")
 
 		// send back the response
 		res.Write(jsonEncodedBytesFromBson)
