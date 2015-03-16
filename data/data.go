@@ -70,7 +70,7 @@ func LoadAndTransformCsvData(csvFileHandle *os.File, configJsonDescriptor *Confi
 			if dataRecordFieldVal != "" {
 				switch dataRecordFieldTypeString {
 				case "string":
-					bsonDataRecordMap[dataRecordFieldName] = []rune(dataRecordFieldVal)
+					bsonDataRecordMap[dataRecordFieldName] = dataRecordFieldVal
 				case "bool":
 					dataRecordFieldTypeBoolVal, err := strconv.ParseBool(dataRecordFieldVal)
 					if err != nil {
