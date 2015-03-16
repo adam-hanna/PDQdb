@@ -1,5 +1,16 @@
 {
 	"ImportPath": "github.com/adam-hanna/PDQdb",
 	"GoVersion": "go1.4.2",
-	"Deps": []
+	"Deps": [
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-87-g8ce64f1",
+			"Rev": "8ce64f19ff08029a69d11b7615c9b591245450ad"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2/bson",
+			"Comment": "r2015.01.24",
+			"Rev": "c6a7dce14133ccac2dcac3793f1d6e2ef048503a"
+		}
+	]
 }
