@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2015 Adam Hanna
+ * Copyright (C) 2015 Jonathan Barronville
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package main
 
 import (
@@ -13,9 +31,9 @@ import (
 // can we define no 64 bit shiz? doing this will ensure we use the least amount of memory necessary
 // we're assuming the first col is the ID and won't be stored (bc it will be the key)
 type DataStruct struct {
-	foo2 uint64
-	foo3 int64
-	foo4 float64
+	foo2 uint8
+	foo3 int8
+	foo4 float32
 }
 
 func main() {
@@ -57,14 +75,14 @@ func ToMem(sFilePath string, m map[string]DataStruct) {
 			slTemp := strings.FieldsFunc(scanner.Text(), tabSlicer)
 
 			//handle errors later
-			tempFoo2, _ := strconv.ParseUint(slTemp[1], 10, 64)
-			tempFoo3, _ := strconv.ParseInt(slTemp[2], 10, 64)
-			tempFoo4, _ := strconv.ParseFloat(slTemp[3], 64)
+			tempFoo2, _ := strconv.ParseUint(slTemp[1], 10, 8)
+			tempFoo3, _ := strconv.ParseInt(slTemp[2], 10, 8)
+			tempFoo4, _ := strconv.ParseFloat(slTemp[3], 32)
 
 			tempData := DataStruct{
-				tempFoo2,
-				tempFoo3,
-				tempFoo4,
+				uint8(tempFoo2),
+				int8(tempFoo3),
+				float32(tempFoo4),
 			}
 			m[slTemp[0]] = tempData
 		}
