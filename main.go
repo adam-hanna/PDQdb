@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2015 Adam Hanna
- * Copyright (C) 2015 Jonathan Barronville
+ * Copyright (C) 2015 Adam Hanna <ahanna@alumni.mines.edu>
+ * Copyright (C) 2015 Jonathan Barronville <jonathan@belairlabs.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
