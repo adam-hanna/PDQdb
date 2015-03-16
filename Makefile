@@ -3,7 +3,8 @@ default: build
 ##########
 
 build: deps lint test
-	gox -output=".bin/{{.OS}}-{{.Arch}}/PDQdb" -verbose
+	gox -os="darwin linux" -output=".bin/{{.OS}}-{{.Arch}}/PDQdb" -verbose
+	# gox -output=".bin/{{.OS}}-{{.Arch}}/PDQdb" -verbose
 
 clean:
 	rm -fr ./.bin
