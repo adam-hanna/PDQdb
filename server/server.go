@@ -35,17 +35,19 @@ func StartServer(hostname string, port uint16) error {
 
 	var host string = hostname + ":" + strconv.Itoa(int(port))
 
+	log.Printf("Listening on: %s:%d.", hostname, port)
+
 	return http.ListenAndServe(host, mx)
 
 }
 
 func serveMainRoute(res http.ResponseWriter, req *http.Request) {
 	// write the headers
-	res.WriteHeader(http.StatusOK)
 	res.Header().Set("Content-Type", "text/plain")
 
 	// send back the response
 	res.Write([]byte("Pretty Damn Quick!\n"))
+	res.WriteHeader(http.StatusOK)
 }
 
 func processKey(res http.ResponseWriter, req *http.Request) {
@@ -65,19 +67,19 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 		jsonEncodedBytesFromBson, err := json.Marshal(&bsonMap)
 
 		// write the headers
-		res.WriteHeader(http.StatusOK)
 		res.Header().Set("Content-Type", "application/json")
 
 		// send back the response
 		res.Write(jsonEncodedBytesFromBson)
+		res.WriteHeader(http.StatusOK)
 	} else {
 		// do POST / PUT stuff
 
 		// write the headers
-		res.WriteHeader(http.StatusOK)
 		res.Header().Set("Content-Type", "text/plain")
 
 		// send back the response
 		res.Write([]byte("Pretty Damn Quick!\n"))
+		res.WriteHeader(http.StatusOK)
 	}
 }
