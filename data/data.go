@@ -20,6 +20,8 @@ package data
 
 import (
 	"encoding/csv"
+	// "encoding/json"
+	// "fmt"
 	"gopkg.in/mgo.v2/bson"
 	"io"
 	"log"
@@ -109,6 +111,17 @@ func LoadAndTransformCsvData(csvFileHandle *os.File, configJsonDescriptor *Confi
 			// NOTE(@jonathanmarvens): Should be Fatal?
 			log.Print(err)
 		}
+
+		// // NOTE(@jonathanmarvens):
+		// // Listen, I know there are better ways to test.
+		// // This works for now, so stop judging me!!!
+		// jsonEncodedBytesFromBson, err := json.Marshal(&bsonDataRecordMap)
+		// if err != nil {
+		// 	log.Print(err)
+		// }
+		// os.Stdout.Write(jsonEncodedBytesFromBson)
+		// fmt.Print("\n")
+
 		// Assumes the data set's key is always a string.
 		DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)] = bsonDataRecordBytes
 		// fmt.Printf("%s: %v\n", bsonDataRecordMap[configJsonDescriptor.IndexField].(string), data.DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)])
