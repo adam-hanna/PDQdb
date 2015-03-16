@@ -19,15 +19,18 @@
 package server
 
 import (
+	"encoding/json"
 	"github.com/adam-hanna/PDQdb/data"
 	"github.com/gorilla/mux"
+	"gopkg.in/mgo.v2/bson"
+	"log"
 	"net/http"
 	"strconv"
 )
 
 func StartServer(hostname string, port uint16) error {
 	mx := mux.NewRouter()
-	mx.HandleFunc("/key/{key}", ProcessKey)
+	mx.HandleFunc("/key/{key}", processKey)
 	mx.HandleFunc("/", serveMainRoute)
 
 	var host string = hostname + strconv.Itoa(int(port))
@@ -45,21 +48,28 @@ func serveMainRoute(res http.ResponseWriter, req *http.Request) {
 	res.Write([]byte("Pretty Damn Quick!\n"))
 }
 
-func ProcessKey(res http.ResponseWriter, req *http.Request) {
+func processKey(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		// extract the key from the url of the request
 		vars := mux.Vars(req)
 		key := vars["name"]
 
 		//grab the key that the user is looking for
-		var val []byte = data.DataSet[key]
+		var bsonData []byte = data.DataSet[key]
+		var bsonMap bson.M
+		err := bson.Unmarshal(bsonData, &bsonMap)
+		if err != nil {
+			log.Print(err)
+		}
+
+		jsonEncodedBytesFromBson, err := json.Marshal(&bsonMap)
 
 		// write the headers
 		res.WriteHeader(http.StatusOK)
 		res.Header().Set("Content-Type", "text/plain")
 
 		// send back the response
-		res.Write(val)
+		res.Write(jsonEncodedBytesFromBson)
 	} else {
 		// do POST / PUT stuff
 
