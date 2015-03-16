@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015-present Adam Hanna
- * Copyright (C) 2015-present Jonathan Barronville
+ * Copyright (C) 2015-present Jonathan Barronville <jonathan@belairlabs.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
