@@ -89,7 +89,7 @@ func main() {
 				continue
 			}
 			// NOTE(@jonathanmarvens):
-			// The code you're about to see is super inefficient.
+			// The code you're about to see is probably super inefficient.
 			// You write bad code every now and then, too, so don't judge me.
 			// TODO(@jonathanmarvens): Fucking fix this shit ASAP.
 			bsonDataRecordMap := make(bson.M)
