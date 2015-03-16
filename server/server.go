@@ -31,6 +31,7 @@ import (
 func StartServer(hostname string, port uint16) error {
 	mx := mux.NewRouter()
 	mx.HandleFunc("/key/{key}", processKey)
+	mx.HandleFunc("/count", countKeys)
 	mx.HandleFunc("/", serveMainRoute)
 
 	var host string = hostname + ":" + strconv.Itoa(int(port))
@@ -71,6 +72,35 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 
 		// send back the response
 		res.Write(jsonEncodedBytesFromBson)
+		res.WriteHeader(http.StatusOK)
+	} else {
+		// do POST / PUT stuff
+
+		// write the headers
+		res.Header().Set("Content-Type", "text/plain")
+
+		// send back the response
+		res.Write([]byte("Pretty Damn Quick!\n"))
+		res.WriteHeader(http.StatusOK)
+	}
+}
+
+func countKeys(res http.ResponseWriter, req *http.Request) {
+	if req.Method == "GET" {
+		count := make(map[string]int)
+		count["count"] = len(data.DataSet)
+
+		jsonData, err := json.Marshal(count)
+		if err != nil {
+			log.Print(err)
+		}
+
+		// write the headers
+		// change this to json
+		res.Header().Set("Content-Type", "application/json")
+
+		// send back the response
+		res.Write(jsonData)
 		res.WriteHeader(http.StatusOK)
 	} else {
 		// do POST / PUT stuff
