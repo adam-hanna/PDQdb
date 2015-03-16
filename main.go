@@ -19,23 +19,13 @@
 package main
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"github.com/adam-hanna/PDQdb/data"
 	error_ "github.com/adam-hanna/PDQdb/error"
 	"github.com/codegangsta/cli"
-	"gopkg.in/mgo.v2/bson"
-	"io"
 	"log"
 	"os"
-	"strconv"
 )
-
-type ConfigJsonDescriptor struct {
-	Header      []interface{} `json:"header"`
-	IndexField  string        `json:"index_field"`
-	StartAtLine uint          `json:"start_at_line"`
-}
 
 func main() {
 	app := cli.NewApp()
@@ -66,91 +56,13 @@ func main() {
 		defer csvFileHandle.Close()
 		// Get ready to start decoding the JSON config file.
 		csvConfigFileJsonDecoder := json.NewDecoder(csvConfigFileHandle)
-		var configJsonDescriptor ConfigJsonDescriptor
+		var configJsonDescriptor data.ConfigJsonDescriptor
 		err = csvConfigFileJsonDecoder.Decode(&configJsonDescriptor)
 		if err != nil {
 			log.Fatal(err)
 		}
 		// fmt.Println(configJsonDescriptor)
-		// Get ready to start reading the CSV file.
-		csvFileReader := csv.NewReader(csvFileHandle)
-		var csvFileLineCount uint = 1
-		data.DataSet = make(map[string][]byte)
-		for {
-			dataRecord, err := csvFileReader.Read()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Print(err)
-			}
-			if configJsonDescriptor.StartAtLine > csvFileLineCount {
-				csvFileLineCount += 1
-				continue
-			}
-			// NOTE(@jonathanmarvens):
-			// The code you're about to see is probably super inefficient.
-			// You write bad code every now and then, too, so don't judge me.
-			// TODO(@jonathanmarvens): Fucking fix this shit ASAP.
-			bsonDataRecordMap := make(bson.M)
-			for idx, dataRecordFieldVal := range dataRecord {
-				var dataRecordFieldName string
-				var dataRecordFieldTypeString string
-				// There should always be only one iteration of this loop.
-				for key, val := range configJsonDescriptor.Header[idx].(map[string]interface{}) {
-					dataRecordFieldName = key
-					dataRecordFieldTypeString = val.(string)
-				}
-				switch dataRecordFieldTypeString {
-				case "string":
-					bsonDataRecordMap[dataRecordFieldName] = dataRecordFieldVal
-				case "bool":
-					dataRecordFieldTypeBoolVal, err := strconv.ParseBool(dataRecordFieldVal)
-					if err != nil {
-						// NOTE(@jonathanmarvens): Should be Fatal?
-						log.Print(err)
-					}
-					bsonDataRecordMap[dataRecordFieldName] = dataRecordFieldTypeBoolVal
-				case "double":
-					dataRecordFieldTypeDoubleVal, err := strconv.ParseFloat(dataRecordFieldVal, 64)
-					if err != nil {
-						// NOTE(@jonathanmarvens): Should be Fatal?
-						log.Print(err)
-					}
-					bsonDataRecordMap[dataRecordFieldName] = dataRecordFieldTypeDoubleVal
-				case "int32":
-					dataRecordFieldTypeInt32ValTmp, err := strconv.ParseInt(dataRecordFieldVal, 10, 32)
-					if err != nil {
-						// NOTE(@jonathanmarvens): Should be Fatal?
-						log.Print(err)
-					}
-					dataRecordFieldTypeInt32Val := int32(dataRecordFieldTypeInt32ValTmp)
-					bsonDataRecordMap[dataRecordFieldName] = dataRecordFieldTypeInt32Val
-				case "int64":
-					dataRecordFieldTypeInt64Val, err := strconv.ParseInt(dataRecordFieldVal, 10, 64)
-					if err != nil {
-						// NOTE(@jonathanmarvens): Should be Fatal?
-						log.Print(err)
-					}
-					bsonDataRecordMap[dataRecordFieldName] = dataRecordFieldTypeInt64Val
-				}
-			}
-			// fmt.Println(bsonDataRecordMap)
-			// for key, val := range bsonDataRecordMap {
-			// 	fmt.Printf("%s: %v\n", key, val)
-			// 	fmt.Print("\n\n")
-			// }
-			bsonDataRecordBytes, err := bson.Marshal(bsonDataRecordMap)
-			if err != nil {
-				// NOTE(@jonathanmarvens): Should be Fatal?
-				log.Print(err)
-			}
-			// Assumes the data set's key is always a string.
-			data.DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)] = bsonDataRecordBytes
-			// fmt.Printf("%s: %v\n", bsonDataRecordMap[configJsonDescriptor.IndexField].(string), data.DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)])
-			csvFileLineCount += 1
-		}
-		// fmt.Print(data.DataSet)
+		data.LoadAndTransformCsvData(csvFileHandle, &configJsonDescriptor)
 	}
 	app.Authors = []cli.Author{
 		{
