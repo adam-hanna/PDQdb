@@ -6,7 +6,7 @@ A read-optimized, in-memory, data processing engine.
 ## Instructions
 
 1. Install goLang on your computer
-2. git clone the repo
+2. `$ git clone https://github.com/adam-hanna/PDQdb.git`
 3. `$ make`
   * Only builds for linux and MacOS, for now
 4. `$ PDQdb -f "path/to/your/file.csv" -c "path/to/your/config.json"`
