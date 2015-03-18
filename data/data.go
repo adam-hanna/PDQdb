@@ -29,13 +29,13 @@ import (
 	"strconv"
 )
 
-type ConfigJsonDescriptor struct {
+type configJsonDescriptorStruct struct {
 	Header      []interface{} `json:"header"`
 	IndexField  string        `json:"index_field"`
 	StartAtLine uint          `json:"start_at_line"`
 }
 
-type CLIFlagsStruct struct {
+type CliFlagsStruct struct {
 	ConfigFilePath string
 	FilePath       string
 	ServerHostname string
@@ -44,7 +44,7 @@ type CLIFlagsStruct struct {
 
 var DataSet map[string][]byte
 
-func LoadAndTransformCsvData(cliFlags CLIFlagsStruct) {
+func LoadAndTransformCsvData(cliFlags CliFlagsStruct) {
 	// Open the JSON config file.
 	csvConfigFileHandle, err := os.Open(cliFlags.ConfigFilePath)
 	if err != nil {
@@ -59,7 +59,7 @@ func LoadAndTransformCsvData(cliFlags CLIFlagsStruct) {
 	defer csvFileHandle.Close()
 	// Get ready to start decoding the JSON config file.
 	csvConfigFileJsonDecoder := json.NewDecoder(csvConfigFileHandle)
-	var configJsonDescriptor ConfigJsonDescriptor
+	var configJsonDescriptor configJsonDescriptorStruct
 	err = csvConfigFileJsonDecoder.Decode(&configJsonDescriptor)
 	if err != nil {
 		log.Fatal(err)

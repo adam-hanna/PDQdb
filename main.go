@@ -27,7 +27,7 @@ import (
 
 func main() {
 	// Grab the user inputed CLI flags
-	cliFlags := data.CLIFlagsStruct{}
+	cliFlags := data.CliFlagsStruct{}
 	cli.StartCLI(&cliFlags)
 
 	// Load the csv data into memory

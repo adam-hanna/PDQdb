@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func StartCLI(cliFlags *data.CLIFlagsStruct) {
+func StartCLI(cliFlags *data.CliFlagsStruct) {
 	app := cli.NewApp()
 	app.Action = func(ctx *cli.Context) {
 		csvConfigFilePath := ctx.GlobalString("config-file-path")
