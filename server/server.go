@@ -36,7 +36,7 @@ func StartServer(hostname string, port uint16) error {
 
 	var host string = hostname + ":" + strconv.Itoa(int(port))
 
-	log.Printf("Listening on: %s:%d.", hostname, port)
+	log.Printf("Listening on: %s:%d...", hostname, port)
 
 	return http.ListenAndServe(host, mx)
 

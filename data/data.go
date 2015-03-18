@@ -20,7 +20,7 @@ package data
 
 import (
 	"encoding/csv"
-	// "encoding/json"
+	"encoding/json"
 	// "fmt"
 	"gopkg.in/mgo.v2/bson"
 	"io"
@@ -36,17 +36,36 @@ type ConfigJsonDescriptor struct {
 }
 
 type CLIFlagsStruct struct {
-	configFilePath string
-	filePath       string
-	serverHostname string
-	serverPort     uint16
+	ConfigFilePath string
+	FilePath       string
+	ServerHostname string
+	ServerPort     uint16
 }
-
-var CLIFlags CLIFlagsStruct
 
 var DataSet map[string][]byte
 
-func LoadAndTransformCsvData(csvFileHandle *os.File, configJsonDescriptor *ConfigJsonDescriptor) {
+func LoadAndTransformCsvData(cliFlags CLIFlagsStruct) {
+	// Open the JSON config file.
+	csvConfigFileHandle, err := os.Open(cliFlags.ConfigFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer csvConfigFileHandle.Close()
+	// Open the CSV file.
+	csvFileHandle, err := os.Open(cliFlags.FilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer csvFileHandle.Close()
+	// Get ready to start decoding the JSON config file.
+	csvConfigFileJsonDecoder := json.NewDecoder(csvConfigFileHandle)
+	var configJsonDescriptor ConfigJsonDescriptor
+	err = csvConfigFileJsonDecoder.Decode(&configJsonDescriptor)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// fmt.Println(configJsonDescriptor)
+
 	// Get ready to start reading the CSV file.
 	csvFileReader := csv.NewReader(csvFileHandle)
 	var csvFileLineCount uint = 1
@@ -208,8 +227,8 @@ func LoadAndTransformCsvData(csvFileHandle *os.File, configJsonDescriptor *Confi
 
 		// Assumes the data set's key is always a string.
 		DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)] = bsonDataRecordBytes
-		// fmt.Printf("%s: %v\n", bsonDataRecordMap[configJsonDescriptor.IndexField].(string), data.DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)])
+		// fmt.Printf("%s: %v\n", bsonDataRecordMap[configJsonDescriptor.IndexField].(string), DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)])
 		csvFileLineCount += 1
 	}
-	// fmt.Print(data.DataSet)
+	// fmt.Print(DataSet)
 }

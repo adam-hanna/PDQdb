@@ -19,16 +19,23 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/adam-hanna/PDQdb/cli"
 	"github.com/adam-hanna/PDQdb/data"
-	error_ "github.com/adam-hanna/PDQdb/error"
 	"github.com/adam-hanna/PDQdb/server"
 	"log"
-	"os"
 )
 
 func main() {
-	cli.StartCLI()
+	// Grab the user inputed CLI flags
+	cliFlags := data.CLIFlagsStruct{}
+	cli.StartCLI(&cliFlags)
 
+	// Load the csv data into memory
+	data.LoadAndTransformCsvData(cliFlags)
+
+	// start the server
+	err := server.StartServer(cliFlags.ServerHostname, cliFlags.ServerPort)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
