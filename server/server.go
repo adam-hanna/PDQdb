@@ -74,7 +74,7 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 		res.Write(jsonEncodedBytesFromBson)
 		res.WriteHeader(http.StatusOK)
 	} else {
-		// do POST / PUT stuff
+		// do POST / PUT / DELETE stuff
 
 		// write the headers
 		res.Header().Set("Content-Type", "text/plain")
@@ -87,8 +87,11 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 
 func countKeys(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
-		count := make(map[string]int)
-		count["count"] = len(data.DataSet)
+
+		type count Struct {
+			count int
+		}
+		count.count = len(data.DataSet)
 
 		jsonData, err := json.Marshal(count)
 		if err != nil {
@@ -103,7 +106,7 @@ func countKeys(res http.ResponseWriter, req *http.Request) {
 		res.Write(jsonData)
 		res.WriteHeader(http.StatusOK)
 	} else {
-		// do POST / PUT stuff
+		// do POST / PUT / DELETE stuff
 
 		// write the headers
 		res.Header().Set("Content-Type", "text/plain")
