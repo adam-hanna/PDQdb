@@ -35,6 +35,15 @@ type ConfigJsonDescriptor struct {
 	StartAtLine uint          `json:"start_at_line"`
 }
 
+type CLIFlagsStruct struct {
+	configFilePath string
+	filePath       string
+	serverHostname string
+	serverPort     uint16
+}
+
+var CLIFlags CLIFlagsStruct
+
 var DataSet map[string][]byte
 
 func LoadAndTransformCsvData(csvFileHandle *os.File, configJsonDescriptor *ConfigJsonDescriptor) {
