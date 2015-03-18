@@ -36,7 +36,7 @@ func StartServer(hostname string, port uint16) error {
 
 	var host string = hostname + ":" + strconv.Itoa(int(port))
 
-	log.Printf("Listening on: %s:%d...", hostname, port)
+	log.Printf("Listening on: %s:%d", hostname, port)
 
 	return http.ListenAndServe(host, mx)
 
@@ -88,12 +88,13 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 func countKeys(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 
-		type count Struct {
-			count int
+		type count struct {
+			Count int
 		}
-		count.count = len(data.DataSet)
+		c1 := count{}
+		c1.Count = len(data.DataSet)
 
-		jsonData, err := json.Marshal(count)
+		jsonData, err := json.Marshal(c1)
 		if err != nil {
 			log.Print(err)
 		}
