@@ -11,9 +11,9 @@ A read-optimized, in-memory, data processing engine.
   * Only builds for linux and MacOS, for now
 4. `$ PDQdb -f "path/to/your/file.csv" -c "path/to/your/config.json"`
 5. http api (returns json)
-  * Grab value by key: `curl -v -XGET http://127.0.0.1:38216/key/{your key}`
+  * Grab data by key: `curl -v -XGET http://127.0.0.1:38216/key/{your key}`
   * Count keys: `curl -v -XGET http://127.0.0.1:38216/count`
-  * Grab value by index: `curl -X POST  -H "Content-Type: application/json" -d "{\"A\": \"foo\"}" http://localhost:38216/query`
+  * Grab data by index: `curl -X POST  -H "Content-Type: application/json" -d "{\"A\": \"foo\"}" http://localhost:38216/query`
 
 
 ## Example data
