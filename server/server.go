@@ -127,14 +127,16 @@ func countKeys(res http.ResponseWriter, req *http.Request) {
 func queryRoute(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "POST" {
 		if req.Header.Get("Content-Type") == "application/json" {
-			var jsonInterface map[string]interface{}
-			jsonQuery := json.NewDecoder(req.Body)
-			err := jsonQuery.Decode(&jsonInterface)
+			decoder := json.NewDecoder(req.Body)
+
+			var template interface{}
+			err := decoder.Decode(&template)
 			if err != nil {
 				panic(err)
 			}
+			m := template.(map[string]interface{})
 
-			jsonEncodedBytesFromBson := index.QueryIndex(jsonInterface)
+			jsonEncodedBytesFromBson := index.QueryIndex(m)
 
 			// write the headers
 			// change this to json

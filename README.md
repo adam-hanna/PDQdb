@@ -13,37 +13,31 @@ A read-optimized, in-memory, data processing engine.
 5. http api (returns json)
   * Grab value by key: `curl -v -XGET http://127.0.0.1:38216/key/{your key}`
   * Count keys: `curl -v -XGET http://127.0.0.1:38216/count`
+  * Grab value by index: `curl -X POST  -H "Content-Type: application/json" -d "{\"A\": \"foo\"}" http://localhost:38216/query`
 
 
-### Example config.json
+## Example data
+###example.csv
+```
+1,foo,test
+2,foobar,testtest
+3,foo,testtesttest
+4,foo,testtest
+5,foobarbar,bar
+6,foofoo,barbar
+7,foofoo,barbarbar
+```
+
+###example_config.json
 ```go
 {
   "header": [
-    {"_id": "string"},
-    {"SITE_ADDR": "string"},
-    {"TID_INTERP": "string"},
-    {"OWNER1": "string"},
-    {"UC_INTERP": "string"},
-    {"ELEC_UTIL": "string"},
-    {"F1_EST_KW": "float32"},
-    {"TOTAL_VAL": "int"},
-    {"LS_DATE": "string"},
-    {"AorC_ZIP": "string"},
-    {"OWN_OCC2": "string"},
-    {"BLD_AREA": "int"},
-    {"NUM_ROOMS": "int"},
-    {"CREDIT": "string"},
-    {"EST_KWH_CN": "int"},
-    {"C_INSTALL1": "string"},
-    {"YEAR_BUILT": "string"},
-    {"BLDG_AREA_SQFT": "float32"},
-    {"EFFCTV_RAT": "float32"},
-    {"LATITUDE": "float32"},
-    {"LONGITUDE": "float32"},
-    {"MAX_BEHAV_SCORE": "int"},
-    {"UC_INTERP_SIMP": "string"}
+    {"ID": "string"},
+    {"A": "string"},
+    {"B": "string"}
   ],
-  "index_field": "_id",
+  "id_field": "ID",
+  "index_fields": ["A", "B"],
   "start_at_line": 2
 }  
 ```

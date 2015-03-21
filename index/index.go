@@ -8,6 +8,7 @@ package index
 
 import (
 	"encoding/json"
+	// "fmt"
 	"github.com/adam-hanna/PDQdb/globals"
 	"gopkg.in/mgo.v2/bson"
 	"log"
@@ -41,7 +42,7 @@ func QueryIndex(query map[string]interface{}) []byte {
 
 	// grab the data that matches the keys
 	var bsonMap bson.M
-	returnMap := make(map[string]interface{})
+	returnArray := make([]map[string]interface{}, len(aKeys))
 	for keys := range aKeys {
 		var bsonData []byte = globals.DataSet[aKeys[keys]]
 
@@ -50,10 +51,15 @@ func QueryIndex(query map[string]interface{}) []byte {
 			log.Print(err)
 		}
 
-		returnMap[aKeys[keys]] = bsonMap
+		//initialize the map at this array point
+		returnArray[keys] = make(map[string]interface{})
+		// copy the map values into this new map
+		for k, v := range bsonMap {
+			returnArray[keys][k] = v
+		}
 	}
 
-	jsonEncodedBytesFromBson, err := json.Marshal(&returnMap)
+	jsonEncodedBytesFromBson, err := json.Marshal(&returnArray)
 	if err != nil {
 		log.Print(err)
 	}

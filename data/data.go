@@ -227,7 +227,7 @@ func LoadAndTransformCsvData(cliFlags globals.CliFlagsStruct) {
 		// Assumes the data set's key is always a string.
 		globals.DataSet[bsonDataRecordMap[configJsonDescriptor.IdField].(string)] = bsonDataRecordBytes
 		// fmt.Printf("%s: %v\n", bsonDataRecordMap[configJsonDescriptor.IdField].(string), globals.DataSet[bsonDataRecordMap[configJsonDescriptor.IdField].(string)])
-
+		// fmt.Println(configJsonDescriptor.IndexFields, bsonDataRecordMap[configJsonDescriptor.IdField].(string), bsonDataRecordMap)
 		// add the necessary indexes
 		if len(configJsonDescriptor.IndexFields) > 0 {
 			index.AppendIndex(configJsonDescriptor.IndexFields, bsonDataRecordMap[configJsonDescriptor.IdField].(string), bsonDataRecordMap)
