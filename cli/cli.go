@@ -1,14 +1,14 @@
 package cli
 
 import (
-	"github.com/adam-hanna/PDQdb/data"
 	error_ "github.com/adam-hanna/PDQdb/error"
+	"github.com/adam-hanna/PDQdb/globals"
 	"github.com/codegangsta/cli"
 	"log"
 	"os"
 )
 
-func StartCLI(cliFlags *data.CliFlagsStruct) {
+func StartCLI(cliFlags *globals.CliFlagsStruct) {
 	app := cli.NewApp()
 	app.Action = func(ctx *cli.Context) {
 		csvConfigFilePath := ctx.GlobalString("config-file-path")

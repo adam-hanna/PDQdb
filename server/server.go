@@ -16,11 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// NOTE(@adam-hanna):
+// you're being lazy and aren't properly handleing errors and
+// subsequently sending http error codes!
+
 package server
 
 import (
 	"encoding/json"
-	"github.com/adam-hanna/PDQdb/data"
+	"github.com/adam-hanna/PDQdb/globals"
+	"github.com/adam-hanna/PDQdb/index"
 	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2/bson"
 	"log"
@@ -32,6 +37,7 @@ func StartServer(hostname string, port uint16) error {
 	mx := mux.NewRouter()
 	mx.HandleFunc("/key/{key}", processKey)
 	mx.HandleFunc("/count", countKeys)
+	mx.HandleFunc("/query", queryRoute)
 	mx.HandleFunc("/", serveMainRoute)
 
 	var host string = hostname + ":" + strconv.Itoa(int(port))
@@ -58,7 +64,7 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 		key := vars["key"]
 
 		//grab the key that the user is looking for
-		var bsonData []byte = data.DataSet[key]
+		var bsonData []byte = globals.DataSet[key]
 		var bsonMap bson.M
 		err := bson.Unmarshal(bsonData, &bsonMap)
 		if err != nil {
@@ -92,7 +98,7 @@ func countKeys(res http.ResponseWriter, req *http.Request) {
 			Count int
 		}
 		c1 := count{}
-		c1.Count = len(data.DataSet)
+		c1.Count = len(globals.DataSet)
 
 		jsonData, err := json.Marshal(c1)
 		if err != nil {
@@ -108,6 +114,38 @@ func countKeys(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusOK)
 	} else {
 		// do POST / PUT / DELETE stuff
+
+		// write the headers
+		res.Header().Set("Content-Type", "text/plain")
+
+		// send back the response
+		res.Write([]byte("Pretty Damn Quick!\n"))
+		res.WriteHeader(http.StatusOK)
+	}
+}
+
+func queryRoute(res http.ResponseWriter, req *http.Request) {
+	if req.Method == "POST" {
+		if req.Header.Get("Content-Type") == "application/json" {
+			var jsonInterface map[string]interface{}
+			jsonQuery := json.NewDecoder(req.Body)
+			err := jsonQuery.Decode(&jsonInterface)
+			if err != nil {
+				panic(err)
+			}
+
+			jsonEncodedBytesFromBson := index.QueryIndex(jsonInterface)
+
+			// write the headers
+			// change this to json
+			res.Header().Set("Content-Type", "application/json")
+
+			// send back the response
+			res.Write(jsonEncodedBytesFromBson)
+			res.WriteHeader(http.StatusOK)
+		}
+	} else {
+		// do GET / PUT / DELETE stuff
 
 		// write the headers
 		res.Header().Set("Content-Type", "text/plain")

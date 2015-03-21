@@ -22,6 +22,8 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	// "fmt"
+	"github.com/adam-hanna/PDQdb/globals"
+	"github.com/adam-hanna/PDQdb/index"
 	"gopkg.in/mgo.v2/bson"
 	"io"
 	"log"
@@ -31,20 +33,12 @@ import (
 
 type configJsonDescriptorStruct struct {
 	Header      []interface{} `json:"header"`
-	IndexField  string        `json:"index_field"`
+	IdField     string        `json:"id_field"`
+	IndexFields []string      `json:"index_fields"`
 	StartAtLine uint          `json:"start_at_line"`
 }
 
-type CliFlagsStruct struct {
-	ConfigFilePath string
-	FilePath       string
-	ServerHostname string
-	ServerPort     uint16
-}
-
-var DataSet map[string][]byte
-
-func LoadAndTransformCsvData(cliFlags CliFlagsStruct) {
+func LoadAndTransformCsvData(cliFlags globals.CliFlagsStruct) {
 	// Open the JSON config file.
 	csvConfigFileHandle, err := os.Open(cliFlags.ConfigFilePath)
 	if err != nil {
@@ -65,11 +59,15 @@ func LoadAndTransformCsvData(cliFlags CliFlagsStruct) {
 		log.Fatal(err)
 	}
 	// fmt.Println(configJsonDescriptor)
+	// initialize the index map
+	if len(configJsonDescriptor.IndexFields) > 0 {
+		index.InitializeIndexes(configJsonDescriptor.IndexFields)
+	}
 
 	// Get ready to start reading the CSV file.
 	csvFileReader := csv.NewReader(csvFileHandle)
 	var csvFileLineCount uint = 1
-	DataSet = make(map[string][]byte)
+
 	for {
 		dataRecord, err := csvFileReader.Read()
 		if err == io.EOF {
@@ -225,10 +223,18 @@ func LoadAndTransformCsvData(cliFlags CliFlagsStruct) {
 		// os.Stdout.Write(jsonEncodedBytesFromBson)
 		// fmt.Print("\n")
 
+		// add the record to the map
 		// Assumes the data set's key is always a string.
-		DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)] = bsonDataRecordBytes
-		// fmt.Printf("%s: %v\n", bsonDataRecordMap[configJsonDescriptor.IndexField].(string), DataSet[bsonDataRecordMap[configJsonDescriptor.IndexField].(string)])
+		globals.DataSet[bsonDataRecordMap[configJsonDescriptor.IdField].(string)] = bsonDataRecordBytes
+		// fmt.Printf("%s: %v\n", bsonDataRecordMap[configJsonDescriptor.IdField].(string), globals.DataSet[bsonDataRecordMap[configJsonDescriptor.IdField].(string)])
+
+		// add the necessary indexes
+		if len(configJsonDescriptor.IndexFields) > 0 {
+			index.AppendIndex(configJsonDescriptor.IndexFields, bsonDataRecordMap[configJsonDescriptor.IdField].(string), bsonDataRecordMap)
+		}
+
+		// next row of the csv
 		csvFileLineCount += 1
 	}
-	// fmt.Print(DataSet)
+	// fmt.Print(globals.DataSet)
 }

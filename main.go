@@ -21,13 +21,17 @@ package main
 import (
 	"github.com/adam-hanna/PDQdb/cli"
 	"github.com/adam-hanna/PDQdb/data"
+	"github.com/adam-hanna/PDQdb/globals"
 	"github.com/adam-hanna/PDQdb/server"
 	"log"
 )
 
 func main() {
+	// make the dataset map
+	globals.InitializeDataset()
+
 	// Grab the user inputed CLI flags
-	cliFlags := data.CliFlagsStruct{}
+	cliFlags := globals.CliFlagsStruct{}
 	cli.StartCLI(&cliFlags)
 
 	// Load the csv data into memory
