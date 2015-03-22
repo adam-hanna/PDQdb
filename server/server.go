@@ -27,7 +27,6 @@ import (
 	"github.com/adam-hanna/PDQdb/globals"
 	"github.com/adam-hanna/PDQdb/index"
 	"github.com/gorilla/mux"
-	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
 	"strconv"
@@ -64,20 +63,19 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 		key := vars["key"]
 
 		//grab the key that the user is looking for
-		var bsonData []byte = globals.DataSet[key]
-		var bsonMap bson.M
-		err := bson.Unmarshal(bsonData, &bsonMap)
-		if err != nil {
-			log.Print(err)
-		}
+		var b bytes.Buffer
+		b = globals.DataSet[keys]
 
-		jsonEncodedBytesFromBson, err := json.Marshal(&bsonMap)
+		// uncompress the data
+		r, err := gzip.NewReader(&b)
+		io.Copy(os.Stdout, r)
+		r.Close()
 
 		// write the headers
 		res.Header().Set("Content-Type", "application/json")
 
 		// send back the response
-		res.Write(jsonEncodedBytesFromBson)
+		res.Write(b)
 		res.WriteHeader(http.StatusOK)
 	} else {
 		// do POST / PUT / DELETE stuff

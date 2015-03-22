@@ -9,8 +9,8 @@ package index
 import (
 	"encoding/json"
 	// "fmt"
+	"compress/gzip"
 	"github.com/adam-hanna/PDQdb/globals"
-	"gopkg.in/mgo.v2/bson"
 	"log"
 )
 
@@ -43,17 +43,17 @@ func QueryIndex(query map[string]interface{}) []byte {
 	// now grab the data. Remember, they're in BSON bytes!
 	aReturn := make([]interface{}, len(aKeys))
 	for keys := range aKeys {
-		err := bson.Unmarshal(globals.DataSet[aKeys[keys]], &aReturn[keys])
-		if err != nil {
-			log.Print(err)
-		}
+		// uncompress the data
+		var b bytes.Buffer
+		b = globals.DataSet[aKeys[keys]]
+		r, err := gzip.NewReader(&b)
+		io.Copy(os.Stdout, r)
+		r.Close()
+
+		// write the uncompressed data to the map
+		aReturn[keys] = b
+
 	}
 
-	// now, marshall the data into JSON and return it!
-	jsonEncodedBytesFromBson, err := json.Marshal(&aReturn)
-	if err != nil {
-		log.Print(err)
-	}
-
-	return jsonEncodedBytesFromBson
+	return aReturn
 }
