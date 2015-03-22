@@ -40,26 +40,20 @@ func QueryIndex(query map[string]interface{}) []byte {
 		aKeys = append(indexes[key][val.(string)])
 	}
 
-	// grab the data that matches the keys
-	var bsonMap bson.M
-	returnArray := make([]map[string]interface{}, len(aKeys))
+	aBytes := make([]interface{}, len(aKeys))
+	aReturn := make([]interface{}, len(aKeys))
+
 	for keys := range aKeys {
-		var bsonData []byte = globals.DataSet[aKeys[keys]]
-
-		err := bson.Unmarshal(bsonData, &bsonMap)
-		if err != nil {
-			log.Print(err)
-		}
-
-		//initialize the map at this array point
-		returnArray[keys] = make(map[string]interface{})
-		// copy the map values into this new map
-		for k, v := range bsonMap {
-			returnArray[keys][k] = v
-		}
+		aBytes[keys] = globals.DataSet[aKeys[keys]])
 	}
 
-	jsonEncodedBytesFromBson, err := json.Marshal(&returnArray)
+	err := bson.Unmarshal(aBytes, &aReturn)
+	if err != nil {
+		log.Print(err)
+	}
+
+
+	jsonEncodedBytesFromBson, err := json.Marshal(&aReturn)
 	if err != nil {
 		log.Print(err)
 	}
