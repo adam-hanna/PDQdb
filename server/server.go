@@ -23,12 +23,17 @@
 package server
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
+	// "fmt"
 	"github.com/adam-hanna/PDQdb/globals"
 	"github.com/adam-hanna/PDQdb/index"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"log"
 	"net/http"
+	// "os"
 	"strconv"
 )
 
@@ -63,19 +68,31 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 		key := vars["key"]
 
 		//grab the key that the user is looking for
-		var b bytes.Buffer
-		b = globals.DataSet[keys]
+		b := bytes.NewBuffer(globals.DataSet[key])
 
 		// uncompress the data
-		r, err := gzip.NewReader(&b)
-		io.Copy(os.Stdout, r)
+		r, err := gzip.NewReader(b)
+		if err != nil {
+			panic(err)
+		}
+
+		temp, err := ioutil.ReadAll(r)
+		if err != nil {
+			panic(err)
+		}
 		r.Close()
+
+		var b1 bytes.Buffer
+		_, err = b1.Write(temp)
+		if err != nil {
+			panic(err)
+		}
 
 		// write the headers
 		res.Header().Set("Content-Type", "application/json")
 
 		// send back the response
-		res.Write(b)
+		res.Write(b1.Bytes())
 		res.WriteHeader(http.StatusOK)
 	} else {
 		// do POST / PUT / DELETE stuff
@@ -104,7 +121,6 @@ func countKeys(res http.ResponseWriter, req *http.Request) {
 		}
 
 		// write the headers
-		// change this to json
 		res.Header().Set("Content-Type", "application/json")
 
 		// send back the response
@@ -134,14 +150,17 @@ func queryRoute(res http.ResponseWriter, req *http.Request) {
 			}
 			m := template.(map[string]interface{})
 
-			jsonEncodedBytesFromBson := index.QueryIndex(m)
+			jsonOut, err := json.Marshal(index.QueryIndex(m))
+			if err != nil {
+				log.Print(err)
+			}
 
 			// write the headers
 			// change this to json
 			res.Header().Set("Content-Type", "application/json")
 
 			// send back the response
-			res.Write(jsonEncodedBytesFromBson)
+			res.Write(jsonOut)
 			res.WriteHeader(http.StatusOK)
 		}
 	} else {

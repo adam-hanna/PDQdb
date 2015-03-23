@@ -7,11 +7,12 @@ package index
 // that have that value
 
 import (
-	"encoding/json"
-	// "fmt"
+	"bytes"
 	"compress/gzip"
+	// "fmt"
+	"encoding/json"
 	"github.com/adam-hanna/PDQdb/globals"
-	"log"
+	"io/ioutil"
 )
 
 var indexes map[string]map[string][]string
@@ -31,7 +32,7 @@ func AppendIndex(indexFields []string, id string, record map[string]interface{})
 	}
 }
 
-func QueryIndex(query map[string]interface{}) []byte {
+func QueryIndex(query map[string]interface{}) []interface{} {
 	// grab the keys from the index that match the query
 	// NOTE(@adam-hanna):
 	// Need to check for duplicate keys!
@@ -44,14 +45,29 @@ func QueryIndex(query map[string]interface{}) []byte {
 	aReturn := make([]interface{}, len(aKeys))
 	for keys := range aKeys {
 		// uncompress the data
-		var b bytes.Buffer
-		b = globals.DataSet[aKeys[keys]]
-		r, err := gzip.NewReader(&b)
-		io.Copy(os.Stdout, r)
+		b := bytes.NewBuffer(globals.DataSet[aKeys[keys]])
+		r, err := gzip.NewReader(b)
+		if err != nil {
+			panic(err)
+		}
+
+		temp, err := ioutil.ReadAll(r)
+		if err != nil {
+			panic(err)
+		}
 		r.Close()
 
-		// write the uncompressed data to the map
-		aReturn[keys] = b
+		var b1 bytes.Buffer
+		_, err = b1.Write(temp)
+		if err != nil {
+			panic(err)
+		}
+
+		// unmarshal the json and write to the array
+		err = json.Unmarshal(b1.Bytes(), &aReturn[keys])
+		if err != nil {
+			panic(err)
+		}
 
 	}
 
