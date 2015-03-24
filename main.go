@@ -19,23 +19,26 @@
 package main
 
 import (
+	// "fmt"
 	"github.com/adam-hanna/PDQdb/cli"
 	"github.com/adam-hanna/PDQdb/data"
-	"github.com/adam-hanna/PDQdb/globals"
+	"github.com/adam-hanna/PDQdb/input"
 	"github.com/adam-hanna/PDQdb/server"
 	"log"
 )
 
 func main() {
-	// make the dataset map
-	globals.InitializeDataset()
-
 	// Grab the user inputed CLI flags
-	cliFlags := globals.CliFlagsStruct{}
+	cliFlags := cli.CliFlagsStruct{}
 	cli.StartCLI(&cliFlags)
 
+	// initialize the dataset
+	data.InitializeDataset()
+	// read the config file and set the column map
+	data.InitializeColumnSettings(input.LoadConfigFile(cliFlags))
+
 	// Load the csv data into memory
-	data.LoadAndTransformCsvData(cliFlags)
+	input.LoadAndTransformCsvData(cliFlags)
 
 	// start the server
 	err := server.StartServer(cliFlags.ServerHostname, cliFlags.ServerPort)

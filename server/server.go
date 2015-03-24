@@ -23,17 +23,14 @@
 package server
 
 import (
-	"bytes"
-	"compress/gzip"
+	// "bytes"
 	"encoding/json"
 	// "fmt"
-	"github.com/adam-hanna/PDQdb/globals"
+	"github.com/adam-hanna/PDQdb/data"
 	"github.com/adam-hanna/PDQdb/index"
 	"github.com/gorilla/mux"
-	"io/ioutil"
 	"log"
 	"net/http"
-	// "os"
 	"strconv"
 )
 
@@ -68,31 +65,19 @@ func processKey(res http.ResponseWriter, req *http.Request) {
 		key := vars["key"]
 
 		//grab the key that the user is looking for
-		b := bytes.NewBuffer(globals.DataSet[key])
+		dataMap := data.GetFullRowOfDataByKey(key)
 
-		// uncompress the data
-		r, err := gzip.NewReader(b)
+		// transform to json
+		jsonData, err := json.Marshal(dataMap)
 		if err != nil {
-			panic(err)
-		}
-
-		temp, err := ioutil.ReadAll(r)
-		if err != nil {
-			panic(err)
-		}
-		r.Close()
-
-		var b1 bytes.Buffer
-		_, err = b1.Write(temp)
-		if err != nil {
-			panic(err)
+			log.Print(err)
 		}
 
 		// write the headers
 		res.Header().Set("Content-Type", "application/json")
 
 		// send back the response
-		res.Write(b1.Bytes())
+		res.Write(jsonData)
 		res.WriteHeader(http.StatusOK)
 	} else {
 		// do POST / PUT / DELETE stuff
@@ -110,10 +95,9 @@ func countKeys(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 
 		type count struct {
-			Count int
+			Count uint64
 		}
-		c1 := count{}
-		c1.Count = len(globals.DataSet)
+		c1 := count{data.CountRecords()}
 
 		jsonData, err := json.Marshal(c1)
 		if err != nil {
