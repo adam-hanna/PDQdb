@@ -68,7 +68,7 @@ func countQuery(query queryStruct) map[string]int {
 		evalWhereClause(query.WHERE, &tempKeysMatched)
 
 		// find the intersection of the keys
-		finalKeysMatched := arrayOperations.IntersectUint64Arr(tempKeysMatched)
+		finalKeysMatched := arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
 
 		// write to the output map
 		mReturn["COUNT"] = len(finalKeysMatched)
@@ -85,12 +85,12 @@ func countQuery(query queryStruct) map[string]int {
 		evalWhereClause(query.WHERE, &tempKeysMatched)
 
 		// find the intersection of the where keys
-		whereIntersect := arrayOperations.IntersectUint64Arr(tempKeysMatched)
+		whereIntersect := arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
 
 		// lastly, find the intersection of the where and groupby idx's
 		for key, val := range groupByIndex {
 			// find the intersection
-			mReturn[key] = len(arrayOperations.IntersectUint64(whereIntersect, val))
+			mReturn[key] = len(arrayOperations.SortedIntersectUint64(whereIntersect, val))
 		}
 	}
 
@@ -114,7 +114,7 @@ func selectQuery(query queryStruct) []map[string]interface{} {
 		evalWhereClause(query.WHERE, &tempKeysMatched)
 
 		// find the intersection of the idx's
-		finalKeysMatched := arrayOperations.IntersectUint64Arr(tempKeysMatched)
+		finalKeysMatched := arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
 
 		// redimension the return array
 		aReturn = make([]map[string]interface{}, len(finalKeysMatched))

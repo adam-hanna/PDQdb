@@ -3,6 +3,10 @@
 	"GoVersion": "go1.2.1",
 	"Deps": [
 		{
+			"ImportPath": "github.com/adam-hanna/arrayOperations",
+			"Rev": "eb5a44c3a215ad44d7f64c80c168dc8ce816d1d4"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-87-g8ce64f1",
 			"Rev": "8ce64f19ff08029a69d11b7615c9b591245450ad"

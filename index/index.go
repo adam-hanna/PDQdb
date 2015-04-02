@@ -9,12 +9,15 @@ package index
 import (
 	// "fmt"
 	"github.com/adam-hanna/PDQdb/data"
+	"sort"
 )
 
-// This map holds all of the indexes. The first map keys are the indexed columns.
+// This map holds all of the indexes. The first map keys are the indexed column names.
 // The nested map keys are the unique values of that column. Only supports strings for now!
 // The nested map values are the corresponding locations (e.g. idx) in the dataset that
-// the data lives at
+// the data lives at. The idx's are stored in sorted order to allow faster searching.
+// One important thing to note, is that due to how we are adding data to the index, they will
+// always be sorted in ascending order!
 var indexes map[string]map[string][]uint64
 
 // create the index map. This is only done once on startup after reading the config.json
@@ -35,6 +38,28 @@ func AppendIndex(indexFieldNames []string, id string, record []interface{}) {
 	}
 }
 
+// sort the idx's of the all the indexes
+func SortIndexes() {
+	for _, val1 := range indexes {
+		for _, val2 := range val1 {
+			sort.Sort(uintArray(val2))
+		}
+	}
+}
+
+// sort the idx's of index by colName
+func SortIndexbyColName(colName string) {
+	for _, val := range indexes[colName] {
+		sort.Sort(uintArray(val))
+	}
+}
+
+// sort the idx's of an index by colName and unique val
+// only support string unique val's for now!
+func SortIndexbyColNameAndVal(colName string, uniqueVal string) {
+	sort.Sort(uintArray(indexes[colName][uniqueVal]))
+}
+
 // this function returns the idx's that match a query
 func QueryIndex(queryKey string, queryVal string) []uint64 {
 	// grab all the idx's from the index that match the query
@@ -43,6 +68,11 @@ func QueryIndex(queryKey string, queryVal string) []uint64 {
 	// fields for now
 	return indexes[queryKey][queryVal]
 
+}
+
+// this function returns all the indexes
+func GetIndexes() map[string]map[string][]uint64 {
+	return indexes
 }
 
 // this function returns all of the unique values and their locations in the data of a column
@@ -62,3 +92,10 @@ func GetUniqueValsByColName(colName string) []string {
 
 	return tempArr
 }
+
+// Need to create some helpers for our sort.Sort
+type uintArray []uint64
+
+func (s uintArray) Len() int           { return len(s) }
+func (s uintArray) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s uintArray) Less(i, j int) bool { return s[i] < s[j] }
