@@ -9,6 +9,7 @@ import (
 	"github.com/adam-hanna/arrayOperations"
 	"log"
 	"net/http"
+	"reflect"
 	"sort"
 )
 
@@ -142,10 +143,33 @@ func evalWhereClause(mWhere map[string]interface{}) []uint64 {
 			tempKeysMatched = append(tempKeysMatched, evalNotClause(val.(map[string]interface{})))
 		case "$NOR":
 			tempKeysMatched = append(tempKeysMatched, evalNorClause(val.([]interface{})))
+
 		default:
-			// the default is treated as an $AND, so add it to the temp index
-			// we will run an intersection on the temp index last.
-			tempKeysMatched = append(tempKeysMatched, index.QueryIndex(key, val.(string)))
+			// check to see if the values of the keys are anything special
+			if testMap(val) {
+				// it's a map!
+				m := val.(map[string]interface{})
+
+				// it should only have one key!
+				for key1, val1 := range m {
+					switch key1 {
+					case "$IN":
+						tempKeysMatched = append(tempKeysMatched, evalInClause(key, val1.([]interface{})))
+					case "$NIN":
+						tempKeysMatched = append(tempKeysMatched, evalNinClause(key, val1.([]interface{})))
+
+					default:
+						// ermm... this should never happen.... I NEED AN ADULT!
+						log.Panic(error_.New("Not a valid query! Only $IN and $NIN are valid sub-documents!"))
+					}
+				}
+			} else {
+				// not a map!
+				// the default is treated as an $AND, so add it to the temp index
+				// we will run an intersection on the temp index last.
+				// NOTE(@adam-hanna): we only support strings for now!
+				tempKeysMatched = append(tempKeysMatched, index.QueryIndex(key, val.(string)))
+			}
 		}
 	}
 
@@ -218,9 +242,45 @@ func evalNorClause(norVal []interface{}) []uint64 {
 
 }
 
+func evalInClause(colName string, inVal []interface{}) []uint64 {
+	// build the array that will hold the idx's
+	aTemp := make([][]uint64, 0)
+
+	// loop through the acceptable values, adding the matching idx's to our array
+	for idx := range inVal {
+		// NOTE(@adam-hanna): we only support strings for now!
+		aTemp = append(aTemp, index.QueryIndex(colName, inVal[idx].(string)))
+	}
+
+	// find union bc our keys are allowed to be any of these
+	unsortedKeys := arrayOperations.UnionUint64Arr(aTemp)
+
+	// the above may be unsorted, so we need to sort it!
+	if !sort.IsSorted(uintArray(unsortedKeys)) {
+		// the array is not sorted, sort it!
+		sort.Sort(uintArray(unsortedKeys))
+	}
+
+	return unsortedKeys
+}
+
+func evalNinClause(colName string, ninVal []interface{}) []uint64 {
+	return notHelper(evalInClause(colName, ninVal))
+}
+
 // these are some helpers for sorting uint64's
 type uintArray []uint64
 
 func (s uintArray) Len() int           { return len(s) }
 func (s uintArray) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s uintArray) Less(i, j int) bool { return s[i] < s[j] }
+
+// this function tests to see if an interface is a map
+func testMap(obj interface{}) bool {
+	v := reflect.ValueOf(obj)
+	if v.Kind() == reflect.Map {
+		return true
+	} else {
+		return false
+	}
+}
