@@ -33,11 +33,11 @@ The json query object is structured as follows:
 
 The `"WHERE"` property supports multiple logical operators:
 <ul>
-  <li>`"$OR": [ { "FIELD1": "VAL1" }, {"FIELD2": "VAL2" }, ... ]`</li>
+  <li>`"$OR": [ { "FIELD1": "VAL1" }, {"FIELD1": "VAL2" }, ... ]`</li>
   <li>`"$NOT": { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`</li>
   <li>`"$NOR": { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`; This is the same as `"$NOT": { "$OR": [ ... ] }`</li>
   <li>`"FIELD1": <b>"$IN":</b> [ "VAL1", "VAL2", ... ]`</li>
-  <li>`"FIELD1": <b>"$NIN":</b> [ "VAL1", "VAL2", ... ]` This is the same as `"$NOT": { "$IN": [ ... ] }`</li>
+  <li>`"FIELD1": <b>"$NIN":</b> [ "VAL1", "VAL2", ... ]` This is the same as `"$NOT": { "A": { $IN": [ ... ] } }`</li>
 </ul>
 
 Exporting and aggregating is explained in more detail, below.
