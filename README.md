@@ -49,7 +49,7 @@ Exporting and aggregating is explained in more detail, below.
     <li>`"SELECT" : [ “FIELD 1”, “FIELD 2”, … ]`: SITUATIONAL. An array of strings that indicates the columns to be returned. Omitted if using `"COUNT"`!</li>
     <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). Other logical operators besides <b>AND</b> are available. See the section on `"WHERE"` for more info.</li>
   </ul>
-  <dd><h6>example</h6> 
+  <dd><h6>example</h6>
   <dd>
 <b>query:</b>
 ```
@@ -83,14 +83,14 @@ Exporting and aggregating is explained in more detail, below.
     <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). Other logical operators besides <b>AND</b> are available. See the section on `"WHERE"` for more info.</li>
     <li>`"GROUP BY": "COL1"`: OPTIONAL. Only valid with `"COUNT"` queries. This is the string column name by which to group count results.</li>
   </ul>
-  <dd><h6>examples</h6> 
+  <dd><h6>examples</h6>
   <dd>
 <b>query #1:</b>
 
 ```
 {
   “COUNT”: “*”,
-  "WHERE": { 
+  "WHERE": {
     “A”: “foo”
   }
 }
@@ -107,7 +107,7 @@ Exporting and aggregating is explained in more detail, below.
 ```
 {
   “COUNT”: “*”,
-  "WHERE": { 
+  "WHERE": {
       “A”: “foo”
   },
   “GROUP BY”: “B”
