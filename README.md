@@ -26,18 +26,28 @@ The json query object is structured as follows:
 {
   "SELECT":  [ "COL1", "COL2", ... ], // SITUATIONAL
   "COUNT": "*", // SITUATIONAL
-  "WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }, // OPTIONAL
+  "WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }, // OPTIONAL - see the section on where
   "GROUP BY": "COL1" // OPTIONAL
 }
 ```
 
+The `"WHERE"` property supports multiple logical operators:
+<ul>
+  <li>`"$OR": [ { "FIELD1": "VAL1" }, {"FIELD2": "VAL2" }, ... ]`</li>
+  <li>`"$NOT": { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`</li>
+  <li>`"$NOR": { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`; This is the same as `"$NOT": { "$OR": [ ... ] }`</li>
+  <li>`"FIELD1": <b>"$IN":</b> [ "VAL1", "VAL2", ... ]`</li>
+  <li>`"FIELD1": <b>"$NIN":</b> [ "VAL1", "VAL2", ... ]` This is the same as `"$NOT": { "$IN": [ ... ] }`</li>
+</ul>
+
+Exporting and aggregating is explained in more detail, below.
 <dl>
   <dt><h3>1. Exporting Data</h3>
   <dd>Exporting data is done with the `"SELECT"` query parameter (omit `"COUNT"` and `"GROUP BY"`)
   <dd><h6>Properties</h6>
   <ul>
     <li>`"SELECT" : [ “FIELD 1”, “FIELD 2”, … ]`: SITUATIONAL. An array of strings that indicates the columns to be returned. Omitted if using `"COUNT"`!</li>
-    <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). The `"WHERE"` property supports the <b>`"$OR"`</b> key to return the union of filters. `"$OR": [ { "FIELD1": "VAL1" }, {"FIELD2": "VAL2" } ]` is interpreted as "FIELD1" = "VAL1" OR "FIELD2" = "VAL2"</li>
+    <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). Other logical operators besides <b>AND</b> are available. See the section on `"WHERE"` for more info.</li>
   </ul>
   <dd><h6>example</h6> 
   <dd>
@@ -70,7 +80,7 @@ The json query object is structured as follows:
   <dd><h6>Properties</h6>
   <ul>
     <li>`"COUNT": "*"`: SITUATIONAL. The only value currently supported is "*". Omitted if using `"SELECT"`!</li>
-    <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). The `"WHERE"` property supports the <b>`"$OR"`</b> key to return the union of filters. `"$OR": [ { "FIELD1": "VAL1" }, {"FIELD2": "VAL2" } ]` is interpreted as "FIELD1" = "VAL1" OR "FIELD2" = "VAL2"</li>
+    <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). Other logical operators besides <b>AND</b> are available. See the section on `"WHERE"` for more info.</li>
     <li>`"GROUP BY": "COL1"`: OPTIONAL. Only valid with `"COUNT"` queries. This is the string column name by which to group count results.</li>
   </ul>
   <dd><h6>examples</h6> 
