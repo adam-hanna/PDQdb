@@ -26,7 +26,7 @@ The json query object is structured as follows:
 {
   "SELECT":  [ "COL1", "COL2", ... ], // SITUATIONAL
   "COUNT": "*", // SITUATIONAL
-  "WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }, // OPTIONAL - see the section on where
+  "WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }, // see the section on where
   "GROUP BY": "COL1" // OPTIONAL
 }
 ```
