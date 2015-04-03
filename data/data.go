@@ -47,6 +47,14 @@ func InitializeColumnSettings(columns []interface{}, idField string) {
 	}
 }
 
+func GetKeyByIdx(idx uint64) string {
+	return dataSet[GetIdFieldIdx()][idx].(string)
+}
+
+func GetRecordIdxByKey(key string) uint64 {
+	return primeKeyDictionary[key]
+}
+
 func GetFullRowOfDataByKey(key string) map[string]interface{} {
 	return GetFullRowOfDataByIdx(primeKeyDictionary[key])
 }
@@ -61,20 +69,12 @@ func GetFullRowOfDataByIdx(idx uint64) map[string]interface{} {
 	return temp
 }
 
-func GetDataPointByIdx(colName string, idx uint64) interface{} {
-	return dataSet[GetColIndexByName(colName)][idx]
+func GetDataPointByKey(colName string, key string) interface{} {
+	return GetDataPointByIdx(colName, primeKeyDictionary[key])
 }
 
-func SetData(newData []interface{}) {
-	idFieldIdx := GetIdFieldIdx()
-
-	for key := range newData {
-		dataSet[key] = append(dataSet[key], newData[key])
-	}
-
-	// add the location to the primeKey dictionary
-	// NOTE(@adam-hanna): check for dupe ids?
-	primeKeyDictionary[newData[idFieldIdx].(string)] = uint64(len(dataSet[0]) - 1)
+func GetDataPointByIdx(colName string, idx uint64) interface{} {
+	return dataSet[GetColIndexByName(colName)][idx]
 }
 
 func GetColTypeByName(colName string) string {
@@ -83,6 +83,14 @@ func GetColTypeByName(colName string) string {
 
 func GetColIndexByName(colName string) uint64 {
 	return cols[colName].colIndex
+}
+
+func GetColValsByName(colName string) []interface{} {
+	return GetColValsByIdx(GetColIndexByName(colName))
+}
+
+func GetColValsByIdx(colIdx uint64) []interface{} {
+	return dataSet[colIdx]
 }
 
 func GetIdFieldName() string {
@@ -109,4 +117,16 @@ func GetIdFieldIdx() uint64 {
 
 func CountRecords() uint64 {
 	return uint64(len(dataSet[0]))
+}
+
+func SetData(newData []interface{}) {
+	idFieldIdx := GetIdFieldIdx()
+
+	for key := range newData {
+		dataSet[key] = append(dataSet[key], newData[key])
+	}
+
+	// add the location to the primeKey dictionary
+	// NOTE(@adam-hanna): check for dupe ids?
+	primeKeyDictionary[newData[idFieldIdx].(string)] = uint64(len(dataSet[0]) - 1)
 }
