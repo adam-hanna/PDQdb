@@ -1,0 +1,14 @@
+*.DS_Store
+*.a
+*.bak
+*.dSYM
+*.db
+*.la
+*.lo
+*.log
+*.o
+*.sw*
+*.test
+*.zip
+*~
+/.bin
