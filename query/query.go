@@ -9,6 +9,8 @@ import (
 	"github.com/adam-hanna/arrayOperations"
 	"log"
 	"net/http"
+	"reflect"
+	"sort"
 )
 
 // this struct holds all of the possible query attributes
@@ -54,8 +56,6 @@ func QueryDB(req *http.Request) interface{} {
 func countQuery(query queryStruct) map[string]int {
 	// make a map to hold the return
 	mReturn := make(map[string]int)
-	// make a slice to hold the idx's that match the query
-	tempKeysMatched := make([][]uint64, 0)
 
 	// is a group by present?
 	switch query.GROUPBY {
@@ -64,14 +64,8 @@ func countQuery(query queryStruct) map[string]int {
 		// loop through the "WHERE" key/vals. No logical operator (i.e. and / or) means "and" (i.e. intersect not union)
 		// write the matching keys to our multi-dimensional array
 		// NOTE(@adam-hanna): what if a field in the where is an ID or not an indexed field?
-		// NOTE(@adam-hanna): this should be a private function. It will be used many times.
-		evalWhereClause(query.WHERE, &tempKeysMatched)
-
-		// find the intersection of the keys
-		finalKeysMatched := arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
-
 		// write to the output map
-		mReturn["COUNT"] = len(finalKeysMatched)
+		mReturn["COUNT"] = len(evalWhereClause(query.WHERE))
 
 	default:
 		// yup, there's a group by!
@@ -81,11 +75,8 @@ func countQuery(query queryStruct) map[string]int {
 		// Next, loop through the "WHERE" key/vals. No logical operator (i.e. and / or) means "and" (i.e. intersect not union)
 		// write the matching keys to our multi-dimensional array
 		// NOTE(@adam-hanna): what if a field in the where is an ID or not an indexed field?
-		// NOTE(@adam-hanna): this should be a private function. It will be used many times.
-		evalWhereClause(query.WHERE, &tempKeysMatched)
-
 		// find the intersection of the where keys
-		whereIntersect := arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
+		whereIntersect := evalWhereClause(query.WHERE)
 
 		// lastly, find the intersection of the where and groupby idx's
 		for key, val := range groupByIndex {
@@ -100,8 +91,6 @@ func countQuery(query queryStruct) map[string]int {
 func selectQuery(query queryStruct) []map[string]interface{} {
 	// make an array to hold the return
 	var aReturn []map[string]interface{}
-	// make a slice to hold the idx's that match the query
-	tempKeysMatched := make([][]uint64, 0)
 
 	// is a group by present?
 	switch query.GROUPBY {
@@ -110,11 +99,10 @@ func selectQuery(query queryStruct) []map[string]interface{} {
 		// Loop through the "WHERE" key/vals. No logical operator (i.e. and / or) means "and" (i.e. intersect not union)
 		// write the matching keys to our multi-dimensional array
 		// NOTE(@adam-hanna): what if a field in the where is an ID or not an indexed field?
-		// NOTE(@adam-hanna): this should be a private function. It will be used many times.
-		evalWhereClause(query.WHERE, &tempKeysMatched)
-
 		// find the intersection of the idx's
-		finalKeysMatched := arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
+		// NOTE(@adam-hanna): should be doing a check on query object in separate function
+		// to be sure it meets specs, rather than doing it here?
+		finalKeysMatched := evalWhereClause(query.WHERE)
 
 		// redimension the return array
 		aReturn = make([]map[string]interface{}, len(finalKeysMatched))
@@ -134,36 +122,165 @@ func selectQuery(query queryStruct) []map[string]interface{} {
 
 	default:
 		// groupby's are not allowed in select queries!
+		// NOTE(@adam-hanna): should be doing a check on query object in separate function
+		// to be sure it meets specs, rather than doing it here?
 		log.Panic(error_.New("Not a valid query! GROUPBY parameters are not allowed in SELECT queries!"))
 	}
 
 	return aReturn
 }
 
-func evalWhereClause(oWhere map[string]interface{}, aIdxsMatched *[][]uint64) {
-	for key, val := range oWhere {
+func evalWhereClause(mWhere map[string]interface{}) []uint64 {
+	// create an array to hold the idx's of all the data that meet our search
+	tempKeysMatched := make([][]uint64, 0)
+
+	// loop through the where clause, applying the appropriate logic where necessary
+	for key, val := range mWhere {
 		switch key {
 		case "$OR":
-			*aIdxsMatched = append(*aIdxsMatched, evalOrClause(val.([]interface{})))
+			tempKeysMatched = append(tempKeysMatched, evalOrClause(val.([]interface{})))
+		case "$NOT":
+			tempKeysMatched = append(tempKeysMatched, evalNotClause(val.(map[string]interface{})))
+		case "$NOR":
+			tempKeysMatched = append(tempKeysMatched, evalNorClause(val.([]interface{})))
+
 		default:
-			*aIdxsMatched = append(*aIdxsMatched, index.QueryIndex(key, val.(string)))
+			// check to see if the values of the keys are anything special
+			if testMap(val) {
+				// it's a map!
+				m := val.(map[string]interface{})
+
+				// it should only have one key!
+				for key1, val1 := range m {
+					switch key1 {
+					case "$IN":
+						tempKeysMatched = append(tempKeysMatched, evalInClause(key, val1.([]interface{})))
+					case "$NIN":
+						tempKeysMatched = append(tempKeysMatched, evalNinClause(key, val1.([]interface{})))
+
+					default:
+						// ermm... this should never happen.... I NEED AN ADULT!
+						log.Panic(error_.New("Not a valid query! Only $IN and $NIN are valid sub-documents!"))
+					}
+				}
+			} else {
+				// not a map!
+				// the default is treated as an $AND, so add it to the temp index
+				// we will run an intersection on the temp index last.
+				// NOTE(@adam-hanna): we only support strings for now!
+				tempKeysMatched = append(tempKeysMatched, index.QueryIndex(key, val.(string)))
+			}
 		}
 	}
+
+	// assume that where the user didn't input a logical operator, that an $AND was implied.
+	// therefore, run the interesection...
+	return arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
 }
 
 func evalOrClause(orVal []interface{}) []uint64 {
 	aTemp := make([][]uint64, 0)
 
 	for idx := range orVal {
-		for key, val := range orVal[idx].(map[string]interface{}) {
-			switch key {
-			case "$OR":
-				aTemp = append(aTemp, evalOrClause(val.([]interface{})))
-			default:
-				aTemp = append(aTemp, index.QueryIndex(key, val.(string)))
-			}
+		aTemp = append(aTemp, evalWhereClause(orVal[idx].(map[string]interface{})))
+	}
+
+	// find union
+	unsortedKeys := arrayOperations.UnionUint64Arr(aTemp)
+
+	// the above may be unsorted, so we need to sort it!
+	if !sort.IsSorted(uintArray(unsortedKeys)) {
+		// the array is not sorted, sort it!
+		sort.Sort(uintArray(unsortedKeys))
+	}
+
+	return unsortedKeys
+}
+
+func notHelper(idxs []uint64) []uint64 {
+	// create a temp array for returned idx's
+	aTempReturn := make([]uint64, 0)
+
+	// now, take the inverse of the idx's matched
+	// first, find how many records we have
+	numRecords := data.CountRecords()
+
+	// create two vals for looping
+	i := uint64(0)
+	j := uint64(0)
+	for ; i < numRecords && j < uint64(len(idxs)); i++ {
+		switch i {
+		case idxs[j]:
+			// this is an idx that we found; don't add it to our return array!
+			j++
+		default:
+			// it's not in our list of idx's; let's add it to our return!
+			aTempReturn = append(aTempReturn, i)
 		}
 	}
 
-	return arrayOperations.UnionUint64Arr(aTemp)
+	// now, add the remaining idx's
+	// the length of aTemp will never be greater than the length of the entire db,
+	// so we only have to do this once and not on aTemp
+	for ; i < numRecords; i++ {
+		aTempReturn = append(aTempReturn, i)
+	}
+
+	return aTempReturn
+}
+
+func evalNotClause(mNot map[string]interface{}) []uint64 {
+	// evaluate the elements within the not clause as per usual
+	// and then find the idxs that are NOT those!
+	return notHelper(evalWhereClause(mNot))
+
+}
+
+func evalNorClause(norVal []interface{}) []uint64 {
+	// a nor is an $OR followed by a $NOT.
+	return notHelper(evalOrClause(norVal))
+
+}
+
+func evalInClause(colName string, inVal []interface{}) []uint64 {
+	// build the array that will hold the idx's
+	aTemp := make([][]uint64, 0)
+
+	// loop through the acceptable values, adding the matching idx's to our array
+	for idx := range inVal {
+		// NOTE(@adam-hanna): we only support strings for now!
+		aTemp = append(aTemp, index.QueryIndex(colName, inVal[idx].(string)))
+	}
+
+	// find union bc our keys are allowed to be any of these
+	unsortedKeys := arrayOperations.UnionUint64Arr(aTemp)
+
+	// the above may be unsorted, so we need to sort it!
+	if !sort.IsSorted(uintArray(unsortedKeys)) {
+		// the array is not sorted, sort it!
+		sort.Sort(uintArray(unsortedKeys))
+	}
+
+	return unsortedKeys
+}
+
+func evalNinClause(colName string, ninVal []interface{}) []uint64 {
+	return notHelper(evalInClause(colName, ninVal))
+}
+
+// these are some helpers for sorting uint64's
+type uintArray []uint64
+
+func (s uintArray) Len() int           { return len(s) }
+func (s uintArray) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s uintArray) Less(i, j int) bool { return s[i] < s[j] }
+
+// this function tests to see if an interface is a map
+func testMap(obj interface{}) bool {
+	v := reflect.ValueOf(obj)
+	if v.Kind() == reflect.Map {
+		return true
+	} else {
+		return false
+	}
 }
