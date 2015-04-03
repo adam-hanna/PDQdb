@@ -27,7 +27,7 @@ import (
 	"encoding/json"
 	// "fmt"
 	"github.com/adam-hanna/PDQdb/data"
-	"github.com/adam-hanna/PDQdb/index"
+	"github.com/adam-hanna/PDQdb/query"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -125,16 +125,9 @@ func countKeys(res http.ResponseWriter, req *http.Request) {
 func queryRoute(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "POST" {
 		if req.Header.Get("Content-Type") == "application/json" {
-			decoder := json.NewDecoder(req.Body)
+			tempInterface := query.QueryDB(req)
 
-			var template interface{}
-			err := decoder.Decode(&template)
-			if err != nil {
-				panic(err)
-			}
-			m := template.(map[string]interface{})
-
-			jsonOut, err := json.Marshal(index.QueryIndex(m))
+			jsonOut, err := json.Marshal(tempInterface)
 			if err != nil {
 				log.Print(err)
 			}
