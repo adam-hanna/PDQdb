@@ -31,13 +31,13 @@ The json query object is structured as follows:
 }
 ```
 
-The `"WHERE"` property supports multiple logical operators:
+The `"WHERE"` property is used to filter data. It consists of a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). Other logical operators besides <b>AND</b> are available. See the section below for more info.
 <ul>
   <li>`"$OR": [ { "FIELD1": "VAL1" }, {"FIELD1": "VAL2" }, ... ]`</li>
   <li>`"$NOT": { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`</li>
-  <li>`"$NOR": { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`; This is the same as `"$NOT": { "$OR": [ ... ] }`</li>
+  <li>`"$NOR": { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`; This is the same as `"$NOT": { $OR": [ ... ] }`</li>
   <li>`"FIELD1": <b>"$IN":</b> [ "VAL1", "VAL2", ... ]`</li>
-  <li>`"FIELD1": <b>"$NIN":</b> [ "VAL1", "VAL2", ... ]` This is the same as `"$NOT": { "A": { $IN": [ ... ] } }`</li>
+  <li>`"FIELD1": <b>"$NIN":</b> [ "VAL1", "VAL2", ... ]` This is the same as `"$NOT": { "FIELD1": { $IN": [ ... ] } }`</li>
 </ul>
 
 Exporting and aggregating is explained in more detail, below.
@@ -47,7 +47,7 @@ Exporting and aggregating is explained in more detail, below.
   <dd><h6>Properties</h6>
   <ul>
     <li>`"SELECT" : [ “FIELD 1”, “FIELD 2”, … ]`: SITUATIONAL. An array of strings that indicates the columns to be returned. Omitted if using `"COUNT"`!</li>
-    <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). Other logical operators besides <b>AND</b> are available. See the section on `"WHERE"` for more info.</li>
+    <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters.</li>
   </ul>
   <dd><h6>example</h6>
   <dd>
@@ -80,7 +80,7 @@ Exporting and aggregating is explained in more detail, below.
   <dd><h6>Properties</h6>
   <ul>
     <li>`"COUNT": "*"`: SITUATIONAL. The only value currently supported is "*". Omitted if using `"SELECT"`!</li>
-    <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters. Multiple filters are returned as the intersection of data that meet each criteria (i.e. "FIELD1" = "VAL1" AND "FIELD2" = "VAL2"). Other logical operators besides <b>AND</b> are available. See the section on `"WHERE"` for more info.</li>
+    <li>`"WHERE":   { "FIELD1": "VAL1", "FIELD2": "VAL2", ... }`: a subdocument of filters.</li>
     <li>`"GROUP BY": "COL1"`: OPTIONAL. Only valid with `"COUNT"` queries. This is the string column name by which to group count results.</li>
   </ul>
   <dd><h6>examples</h6>

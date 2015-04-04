@@ -65,7 +65,15 @@ func countQuery(query queryStruct) map[string]int {
 		// write the matching keys to our multi-dimensional array
 		// NOTE(@adam-hanna): what if a field in the where is an ID or not an indexed field?
 		// write to the output map
-		mReturn["COUNT"] = len(evalWhereClause(query.WHERE))
+		// to speed things up, if there's no where clause, we can just return the length of the group by's
+		switch query.WHERE {
+		case nil:
+			// no where! just return the length of the db!
+			mReturn["COUNT"] = int(data.CountRecords())
+		default:
+			// yup, there's a where!
+			mReturn["COUNT"] = len(evalWhereClause(query.WHERE))
+		}
 
 	default:
 		// yup, there's a group by!
@@ -76,12 +84,23 @@ func countQuery(query queryStruct) map[string]int {
 		// write the matching keys to our multi-dimensional array
 		// NOTE(@adam-hanna): what if a field in the where is an ID or not an indexed field?
 		// find the intersection of the where keys
-		whereIntersect := evalWhereClause(query.WHERE)
+		// to speed things up, if there's no where clause, we can just return the length of the group by's
+		switch query.WHERE {
+		case nil:
+			// no query.where; just return the length of each group by!
+			for key, val := range groupByIndex {
+				// find the intersection
+				mReturn[key] = len(val)
+			}
 
-		// lastly, find the intersection of the where and groupby idx's
-		for key, val := range groupByIndex {
-			// find the intersection
-			mReturn[key] = len(arrayOperations.SortedIntersectUint64(whereIntersect, val))
+		default:
+			// yup, there's a where clause; let's evaluate it
+			whereIntersect := evalWhereClause(query.WHERE)
+
+			for key, val := range groupByIndex {
+				// find the intersection
+				mReturn[key] = len(arrayOperations.SortedIntersectUint64(whereIntersect, val))
+			}
 		}
 	}
 
@@ -114,9 +133,15 @@ func selectQuery(query queryStruct) []map[string]interface{} {
 			aReturn[matchedIdx] = make(map[string]interface{})
 
 			// Finally, grab the data that the user has asked to be returned
-			// NOTE(@adam-hanna): add support for "*"
-			for idx := range query.SELECT {
-				aReturn[matchedIdx][query.SELECT[idx]] = data.GetDataPointByIdx(query.SELECT[idx], finalKeysMatched[matchedIdx])
+			switch query.SELECT[0] {
+			case "*":
+				// grab everything!
+				aReturn[matchedIdx] = data.GetFullRowOfDataByIdx(finalKeysMatched[matchedIdx])
+			default:
+				// grab the fields that the user has requested
+				for idx := range query.SELECT {
+					aReturn[matchedIdx][query.SELECT[idx]] = data.GetDataPointByIdx(query.SELECT[idx], finalKeysMatched[matchedIdx])
+				}
 			}
 		}
 
@@ -131,51 +156,67 @@ func selectQuery(query queryStruct) []map[string]interface{} {
 }
 
 func evalWhereClause(mWhere map[string]interface{}) []uint64 {
-	// create an array to hold the idx's of all the data that meet our search
-	tempKeysMatched := make([][]uint64, 0)
+	// is the where clause present?
+	switch mWhere {
+	case nil:
+		//nope, not present, return all the idx's!
+		// create an array to hold the idx's of all the data that meet our search
+		tempKeysMatched := make([]uint64, 0)
+		numRecords := data.CountRecords()
 
-	// loop through the where clause, applying the appropriate logic where necessary
-	for key, val := range mWhere {
-		switch key {
-		case "$OR":
-			tempKeysMatched = append(tempKeysMatched, evalOrClause(val.([]interface{})))
-		case "$NOT":
-			tempKeysMatched = append(tempKeysMatched, evalNotClause(val.(map[string]interface{})))
-		case "$NOR":
-			tempKeysMatched = append(tempKeysMatched, evalNorClause(val.([]interface{})))
+		for i := 0; i < int(numRecords); i++ {
+			tempKeysMatched = append(tempKeysMatched, uint64(i))
+		}
 
-		default:
-			// check to see if the values of the keys are anything special
-			if testMap(val) {
-				// it's a map!
-				m := val.(map[string]interface{})
+		return tempKeysMatched
+	default:
+		// yup, there's a where map. Time to evaluate it!
+		// create an array to hold the idx's of all the data that meet our search
+		tempKeysMatched := make([][]uint64, 0)
 
-				// it should only have one key!
-				for key1, val1 := range m {
-					switch key1 {
-					case "$IN":
-						tempKeysMatched = append(tempKeysMatched, evalInClause(key, val1.([]interface{})))
-					case "$NIN":
-						tempKeysMatched = append(tempKeysMatched, evalNinClause(key, val1.([]interface{})))
+		// loop through the where clause, applying the appropriate logic where necessary
+		for key, val := range mWhere {
+			switch key {
+			case "$OR":
+				tempKeysMatched = append(tempKeysMatched, evalOrClause(val.([]interface{})))
+			case "$NOT":
+				tempKeysMatched = append(tempKeysMatched, evalNotClause(val.(map[string]interface{})))
+			case "$NOR":
+				tempKeysMatched = append(tempKeysMatched, evalNorClause(val.([]interface{})))
 
-					default:
-						// ermm... this should never happen.... I NEED AN ADULT!
-						log.Panic(error_.New("Not a valid query! Only $IN and $NIN are valid sub-documents!"))
+			default:
+				// check to see if the values of the keys are anything special
+				if testMap(val) {
+					// it's a map!
+					m := val.(map[string]interface{})
+
+					// it should only have one key!
+					for key1, val1 := range m {
+						switch key1 {
+						case "$IN":
+							tempKeysMatched = append(tempKeysMatched, evalInClause(key, val1.([]interface{})))
+						case "$NIN":
+							tempKeysMatched = append(tempKeysMatched, evalNinClause(key, val1.([]interface{})))
+
+						default:
+							// ermm... this should never happen.... I NEED AN ADULT!
+							log.Panic(error_.New("Not a valid query! Only $IN and $NIN are valid sub-documents!"))
+						}
 					}
+				} else {
+					// not a map!
+					// the default is treated as an $AND, so add it to the temp index
+					// we will run an intersection on the temp index last.
+					// NOTE(@adam-hanna): we only support strings for now!
+					tempKeysMatched = append(tempKeysMatched, index.QueryIndex(key, val.(string)))
 				}
-			} else {
-				// not a map!
-				// the default is treated as an $AND, so add it to the temp index
-				// we will run an intersection on the temp index last.
-				// NOTE(@adam-hanna): we only support strings for now!
-				tempKeysMatched = append(tempKeysMatched, index.QueryIndex(key, val.(string)))
 			}
 		}
+		// assume that where the user didn't input a logical operator, that an $AND was implied.
+		// therefore, run the interesection...
+		return arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
 	}
 
-	// assume that where the user didn't input a logical operator, that an $AND was implied.
-	// therefore, run the interesection...
-	return arrayOperations.SortedIntersectUint64Arr(tempKeysMatched)
 }
 
 func evalOrClause(orVal []interface{}) []uint64 {
